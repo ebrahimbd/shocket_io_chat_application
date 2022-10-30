@@ -204,8 +204,8 @@ input[type="file"] {
 
        
 
-        <div class="row">
-          <div class="col-sm-6">
+        <div class="container">
+         <!-- <div class="col-sm-6">
             <div class="card">
               <div class="card-body">
                 <div class="card-tittle">id: <span class="id_no"> </span></div>
@@ -230,8 +230,8 @@ input[type="file"] {
                  
               </div>
             </div>
-          </div>
-          <div class="col-sm-6">
+          </div> -->
+          <div class="col-sm-12">
            
             <h2>Available user</h2>
            <div class="card_body user_list">
@@ -248,21 +248,21 @@ input[type="file"] {
 
 
           <div class="row">
-            <div class="col-sm-6">
-              <div class="card">
-                <div class="card-body">
-                  <h5 class="card-title">chat with global</h5>
-                  <input type="text" class="form-control" id="global">
-                  <a   class="btn btn-primary" onclick="global()" >send message</a>
-                </div>
-                <div class="card-body">
-                  <h5 class="card-title">Message</h5>
-                  <p class="card-text1" id="card-text1">
-                   </p>
-                </div>
-              </div>
-            </div>
-            <div class="col-sm-6">
+           <!--       <div class="col-sm-6">
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title">chat with global</h5>
+                      <input type="text" class="form-control" id="global">
+                      <a   class="btn btn-primary" onclick="global()" >send message</a>
+                    </div>
+                    <div class="card-body">
+                      <h5 class="card-title">Message</h5>
+                      <p class="card-text1" id="card-text1">
+                      </p>
+                    </div>
+                  </div>
+                </div>  -->
+            <div class="col-sm-12">
               <div class="card">
                 <ul id="messages"></ul>
                   <div class="BoxChat">
@@ -310,10 +310,14 @@ input[type="file"] {
 
           var socket = io();
 
-         setTimeout(()=>{
-          var id_no = document.getElementsByClassName('id_no')
-          id_no[0].innerHTML=`${socket.id}`
+  /*       setTimeout(()=>{
+        try{  var id_no = document.getElementsByClassName('id_no')
+          id_no[0].innerHTML=`${socket.id}`}catch{
+
+          }
+        
          },1000)
+         */
 
           var messages = document.getElementById('messages');
 
@@ -329,7 +333,6 @@ input[type="file"] {
             console.log("dsfdsfdsf")
             var input= document.getElementById('global')
             socket.emit('global', input.value);
-            //input.value=""
           }
 
           socket.on('global', function(msg) {
@@ -358,34 +361,63 @@ input[type="file"] {
 
     function upload(files) {
       var id=localStorage.getItem('id');
-        console.log("file====", files)
+      console.log("upload(files)  by user ",id)
+           console.log("file====", files)
 
-         
-        
-            socket.emit("upload",socket.id, id, files[0], (status) => {
-              console.log(status);
-            });
-          }
+            console.log("----------------", files[0], id)
+            socket.emit("upload",socket.id, id, files[0],files[0].name)
+      }
          
 
-    socket.on('upload', function(user, id){
-      console.log("----------------", user, id)
-    })
+      socket.on('upload', function(file, id, file_name){
+      localStorage.setItem('id', id);
+      console.log(" socket.on upload id ",id)
+      const img = new Image();
+      // change image type to whatever you use, or detect it in the backend 
+      // and send it if you support multiple extensions
+      img.src = `data:image/jpg;base64,${file}`;
+      img.setAttribute("width", "100");
+      img.setAttribute("height", "100");
+      document.getElementsByClassName('SendmsgNow')[0].style.display = "none";
+      var BoxMassage = document.getElementsByClassName('BoxMassage');
+      let Boxmsg = document.createElement('div');
+      Boxmsg.className = "msgBot massage";
+      var aTag = document.createElement('a');
+
+      if(file_name.split('.')[1]==="jpeg"|| file_name.split('.')[1]==="jpg"|| file_name.split('.')[1]==="png"){
+      aTag.setAttribute('href',`data:image/jpg;base64,${file}`);
+      aTag.setAttribute('download',`${file_name}`);
+      aTag.appendChild(img)
+      Boxmsg.appendChild(aTag)
+      BoxMassage[0].appendChild(Boxmsg);
+        }else{
+      aTag.setAttribute('href',`data:image/jpg;base64,${file}`);
+      aTag.setAttribute('download',`${file_name}`);
+      let cc = document.createElement('div');
+      cc.innerHTML=`<b>File recived ${file_name} </b>`
+      aTag.appendChild(cc)
+      Boxmsg.appendChild(aTag)
+      BoxMassage[0].appendChild(Boxmsg);
+        }
+    
+    
+      console.log("----------------", img.src, id)
+
+      })
 
 
     //for chat messageing  specific clint
+    //i send specific id whcih user send massage
     function click_by_user(id, no){
         localStorage.setItem('id', id);
+        console.log("click by user ",id)
         var user=document.getElementsByClassName('NameBot')
-        user[0].innerText= `User `
+        user[0].innerText= `User ${no} `
 
         var input=document.getElementById('msgUser')
         var click=document.getElementsByClassName('send_user')
         
         click[0].setAttribute("onclick",  `click_by_user('${id}', ${no})`);
-
-      //  var msg=document.getElementsByClassName('SendmsgNow')
-       // msg[0].innerText=input.value
 
        var BoxMassage = document.getElementsByClassName('BoxMassage');
 
@@ -401,7 +433,7 @@ input[type="file"] {
         }
 
         socket.emit('specific_user',input.value, id, `${socket.id}`);
-         input.value=""
+        input.value=""
       }
 
 
@@ -409,6 +441,7 @@ input[type="file"] {
 
      
       socket.on('specific_user', function(msg, id, no) {
+        localStorage.setItem('id', id);
         var user=document.getElementsByClassName('NameBot')
         user[0].innerText= `User `
          var click=document.getElementsByClassName('send_user')

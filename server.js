@@ -4,6 +4,7 @@ const http = require('http');
 const server = http.createServer(app);
 const fs = require('fs');
  
+
 const io = require("socket.io")(server, {
   cors: {
     origin: "http://localhost:3000/",
@@ -41,23 +42,35 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on("upload", (user, id, file, callback) => {
-    // console.log(file); // <Buffer 25 50 44 ...>
-
-  
-    
-    console.log(user, id, file)
-   var tree= fs.writeFileSync('image.png', file)
-
-   var readStream = fs.createReadStream('image.png');
-   console.log("========================", readStream)
-
-    io.to(id).emit('upload', readStream.path, user,);
+//   app.use(express.static(__dirname + '/public/img'));
+//   app.get('/img', function (req, res) {
+//     // logic to find image based on id passed, we will assume it results in shark.jpg
+//     const filepath = `${__dirname}/public/img/image.png`;
+//     res.sendFile(filepath);
+// });
 
 
+
+  socket.on("upload", (user, id, file,file_name, callback) => {
+    // console.log(file); // <Buffer 25 50 44 ...>  
+        setTimeout(() => {
+          console.log(user, id, file)
+          var tree= fs.writeFileSync('image.png', file)
+          var readStream = fs.createReadStream('image.png');
+          const buffer = Buffer.from(file, 'base64');
+          
+          console.log("========================", file_name, buffer)
+        
+          try{
+            io.to(id).emit('upload', file.toString('base64'),  id, file_name);
+          }catch{
+            io.to(id).emit('upload', "invalid",  id);
+          }
+        
+        }, 300);
     // user, id
     // save the content to the disk, for example
-    
+ 
   })
 
   //user specific user id for chat 
