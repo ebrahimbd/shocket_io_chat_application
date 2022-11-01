@@ -4,6 +4,8 @@ const http = require('http');
 const server = http.createServer(app);
 const fs = require('fs');
  
+ 
+
 
 const io = require("socket.io")(server, {
   cors: {
@@ -11,7 +13,8 @@ const io = require("socket.io")(server, {
     methods: ["GET", "POST"],
     allowedHeaders: ["my-custom-header"],
     credentials: true
-  }
+  },
+  maxHttpBufferSize: 1e8
 });
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/pages/index.html');
@@ -50,19 +53,26 @@ io.on('connection', (socket) => {
 // });
 
 
+// var regex = new RegExp("(.*?)\.(pdf|txt|jpg|png|doc|docx|xlx|xls|xlsx|jpg|ppt|pptx|tif|tiff|\n\
+//   bmp|pcd|gif|bmp|zip|rar|odt|avi|ogg|m4a|mov|mp3|mp4|mpg|wav|wmv|stp|sldprt|sldasm|iges|igs|stl|x_t|step\n\
+//   |stp|prt|asm|idw|iam|ipt|dxf|dwg|pdf|slddrw|dwf)$");
 
-  socket.on("upload", (user, id, file,file_name, callback) => {
+
+  socket.on("upload", (user, id, file,file_name,  size, stfile) => {
     // console.log(file); // <Buffer 25 50 44 ...>  
         setTimeout(() => {
           console.log(user, id, file)
-          var tree= fs.writeFileSync('image.png', file)
-          var readStream = fs.createReadStream('image.png');
+          //var tree= fs.writeFileSync('image.png', file)
+          // var readStream = fs.createReadStream('image.png');
+          fSize = sizeinbytes; i=0;while(fSize>900){fSize/=1024;i++;}
+          console.log("=== File size ====", fSize)
+
           const buffer = Buffer.from(file, 'base64');
-          
-          console.log("========================", file_name, buffer)
+          var sizeinbytes =buffer.size;
+          console.log("======uploaded file====", file_name, buffer)
         
           try{
-            io.to(id).emit('upload', file.toString('base64'),  id, file_name);
+            io.to(id).emit('upload', file.toString('base64'),  id, file_name, size, stfile);
           }catch{
             io.to(id).emit('upload', "invalid",  id);
           }
@@ -71,6 +81,14 @@ io.on('connection', (socket) => {
     // user, id
     // save the content to the disk, for example
  
+  })
+
+
+
+
+  socket.on("upload_progress", (id, size, stfile, is_show) => {
+    var is_show=false
+    io.to(id).emit('upload_progress',id, size, stfile,is_show);
   })
 
   //user specific user id for chat 
@@ -87,6 +105,13 @@ io.on('connection', (socket) => {
       })
     }
   });
+
+
+  socket.on("answear_Call", (user, id, stream)=>{
+    console.log("stream", stream)
+    io.to(id).emit('answear_Call', user,  id, stream);
+  })
+
 
 
   // for public message

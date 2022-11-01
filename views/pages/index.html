@@ -28,12 +28,13 @@
       background: #efeae2;
       max-width: 55%;
       margin: auto;
+      width:800px;
   }
   
   .BoxMassage {
       padding: 4%;
       overflow-y: scroll;
-      height: 270px;
+      height: 400px;
   }
   
   .massage {
@@ -194,9 +195,29 @@ input[type="file"] {
     cursor: pointer;
 }
 
+.loader {
+  border: 6px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 6px solid #3498db;
+  width: 15px;
+  height: 15px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+}
 
+/* Safari */
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
 
-   </style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+  
+</style>
 
 
 
@@ -263,7 +284,7 @@ input[type="file"] {
                   </div>
                 </div>  -->
             <div class="col-sm-12">
-              <div class="card">
+              <div class="card" style="border:none">
                 <ul id="messages"></ul>
                   <div class="BoxChat">
                     <div class="BoxInfoUser">
@@ -281,7 +302,10 @@ input[type="file"] {
                     <label for="file-upload" class="custom-file-upload">
                             <img src="https://cdn-icons-png.flaticon.com/512/3097/3097412.png"  width="24px" height="24px">
                         </label>
-                        <input id="file-upload" type="file"  onchange="upload(this.files)"/>
+                         <label  onclick="call_user()" class="custom-file-upload">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3059/3059606.png"  width="24px" height="24px">
+                        </label>
+                        <input id="file-upload" type="file"  onchange="upload(this.files, event)"/>
                         <input type="text" id="msgUser" placeholder="enter your text...">
                         <div class="send_user"  ><svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none">
                                 <path
@@ -310,14 +334,14 @@ input[type="file"] {
 
           var socket = io();
 
-  /*       setTimeout(()=>{
-        try{  var id_no = document.getElementsByClassName('id_no')
-          id_no[0].innerHTML=`${socket.id}`}catch{
+      /*       setTimeout(()=>{
+            try{  var id_no = document.getElementsByClassName('id_no')
+              id_no[0].innerHTML=`${socket.id}`}catch{
 
-          }
-        
-         },1000)
-         */
+              }
+            
+            },1000)
+            */
 
           var messages = document.getElementById('messages');
 
@@ -357,51 +381,222 @@ input[type="file"] {
           });
 
 
+     const call_user=()=>{
+
+        var id=localStorage.getItem('id');
+        
+          if(id===""){
+            alert("Plese select user beofor call")
+          }else
+           {
+             let myVideoStream;
+           // const videoGrid = document.getElementById("video-grid");
+           // const myVideo = document.createElement("video");
+            //myVideo.muted = true;
+            let audio = new Audio();
+            navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: false,
+            })
+            .then((stream) => {
+                myVideoStream = stream;
+                console.log(stream)
+                audio.srcObject=stream
+                local_stream = stream;
+
+                 var madiaRecorder = new MediaRecorder(stream);
+                   madiaRecorder.start();
+                  var audioChunks = [];
+
+            console.log("-----------------",madiaRecorder);
+
+             
+                socket.emit("answear_Call",socket.id, id, madiaRecorder )
+            });
+           audio.play();
+           }
+       
+     }
 
 
-    function upload(files) {
+
+    socket.on("answear_Call",(user, id, stream)=>{
+       let audio = new Audio();
+      // audio.srcObject=stream
+      // audio.play();
+      console.log("aaaaaaaaaaaa", user, stream)
+
+    })
+
+
+
+    function upload(files, event) {
       var id=localStorage.getItem('id');
       console.log("upload(files)  by user ",id)
            console.log("file====", files)
 
             console.log("----------------", files[0], id)
-            socket.emit("upload",socket.id, id, files[0],files[0].name)
+
+             var BoxMassage = document.getElementsByClassName('BoxMassage');
+
+              document.getElementsByClassName('SendmsgNow')[0].style.display = "none";
+              let msg = document.getElementById('msgUser');
+              let Boxmsg = document.createElement('div');
+              Boxmsg.className = "msgUser massage";
+              let TextUser = document.createElement('p');
+             
+ 
+            var sizeinbytes =files[0].size;
+            var fSExt = new Array('Bytes', 'KB', 'MB', 'GB');
+            fSize = sizeinbytes; i=0;while(fSize>900){fSize/=1024;i++;}
+
+            console.log("==============", fSize)
+
+            var size=fSize
+            var stfile=(Math.round(fSize*100)/100)+' '+fSExt[i];
+
+             TextUser.innerHTML = `<b>  <div>Uploaded  file ${(Math.round(fSize*100)/100)+' '+fSExt[i]} </div> </b>`
+
+               let loader = document.createElement('div');
+                loader.setAttribute('class','loader')
+                Boxmsg.appendChild(loader)
+
+                Boxmsg.appendChild(TextUser);
+                BoxMassage[0].appendChild(Boxmsg);
+
+                setTimeout(()=>{
+
+                  loader.remove()
+
+                  Boxmsg.remove()
+
+
+                   const img = new Image();
+                      // change image type to whatever you use, or detect it in the backend 
+                      // and send it if you support multiple extensions
+                      var file_name=files[0].name
+                      img.src = `${URL.createObjectURL(files[0])}`;
+                      img.setAttribute("width", "100");
+                      img.setAttribute("height", "100");
+                      
+                      let new_msg = document.createElement('div');
+                      new_msg.className = "msgUser massage";
+                      var aTag = document.createElement('a');
+
+                      if(file_name.split('.')[1]==="jpeg"|| file_name.split('.')[1]==="jpg"|| file_name.split('.')[1]==="png"){
+                      aTag.setAttribute('href',`${URL.createObjectURL(files[0])}`);
+                      aTag.setAttribute('download',`${file_name}`);
+                      aTag.appendChild(img)
+                      let cc = document.createElement('div');
+                      cc.innerHTML=`<b> ${file_name} <div>File size ${(Math.round(fSize*100)/100)+' '+fSExt[i]} </div> </b>`
+                      aTag.appendChild(cc)
+                       new_msg.appendChild(aTag)
+                      BoxMassage[0].appendChild( new_msg);
+                        }else{
+                      aTag.setAttribute('href',`${URL.createObjectURL(files[0])}`);
+                      aTag.setAttribute('download',`${file_name}`);
+                      let cc = document.createElement('div');
+                      cc.innerHTML=`<b> ${file_name} <div>File size ${(Math.round(fSize*100)/100)+' '+fSExt[i]} </div> </b>`
+                      aTag.appendChild(cc)
+                       new_msg.appendChild(aTag)
+                     Boxmsg.appendChild( new_msg);
+
+                        }
+                },3000)
+
+
+            socket.emit("upload_progress", id, size, stfile )
+
+            console.log("--------------",stfile, size)
+
+            socket.emit("upload",socket.id, id, files[0],files[0].name,  size, stfile )
+
+             /// var ff =event.files.bytesLoaded ;
+             /// var percent = (event.loaded / event.total) * 100;
+              //var tree = Math.round(percent);
+
+              //console.log("ff", ff)
+             
       }
+
+
+
+
+
          
+      socket.on('upload_progress', function(id, size, stfile, is_show){
 
-      socket.on('upload', function(file, id, file_name){
-      localStorage.setItem('id', id);
-      console.log(" socket.on upload id ",id)
-      const img = new Image();
-      // change image type to whatever you use, or detect it in the backend 
-      // and send it if you support multiple extensions
-      img.src = `data:image/jpg;base64,${file}`;
-      img.setAttribute("width", "100");
-      img.setAttribute("height", "100");
-      document.getElementsByClassName('SendmsgNow')[0].style.display = "none";
-      var BoxMassage = document.getElementsByClassName('BoxMassage');
-      let Boxmsg = document.createElement('div');
-      Boxmsg.className = "msgBot massage";
-      var aTag = document.createElement('a');
+        console.log("id, size, stfile",id, size, stfile)
 
-      if(file_name.split('.')[1]==="jpeg"|| file_name.split('.')[1]==="jpg"|| file_name.split('.')[1]==="png"){
-      aTag.setAttribute('href',`data:image/jpg;base64,${file}`);
-      aTag.setAttribute('download',`${file_name}`);
-      aTag.appendChild(img)
-      Boxmsg.appendChild(aTag)
-      BoxMassage[0].appendChild(Boxmsg);
-        }else{
-      aTag.setAttribute('href',`data:image/jpg;base64,${file}`);
-      aTag.setAttribute('download',`${file_name}`);
-      let cc = document.createElement('div');
-      cc.innerHTML=`<b>File recived ${file_name} </b>`
-      aTag.appendChild(cc)
-      Boxmsg.appendChild(aTag)
-      BoxMassage[0].appendChild(Boxmsg);
-        }
-    
-    
-      console.log("----------------", img.src, id)
+        var BoxMassage = document.getElementsByClassName('BoxMassage');
+        let Boxmsg = document.createElement('div');
+
+      
+
+        
+          Boxmsg.className = "msgBot massage";
+          var aTag = document.createElement('a');
+
+          let cc = document.createElement('div');
+          cc.innerHTML=`<b>  <div>Downloaded file ${stfile} </div> </b>`
+
+            let loader = document.createElement('div');
+          loader.setAttribute('class','loader')
+          Boxmsg.appendChild(loader)
+
+
+          aTag.appendChild(cc)
+          Boxmsg.appendChild(aTag)
+          BoxMassage[0].appendChild(Boxmsg);
+          console.log(Boxmsg)
+          setTimeout(()=>{
+            Boxmsg.remove()
+          },3000)
+          
+
+
+      })
+
+
+      socket.on('upload', function(file, id, file_name, size, stfile){
+       setTimeout(()=>{
+           localStorage.setItem('id', id);
+          console.log(" socket.on upload id ",id)
+          const img = new Image();
+          // change image type to whatever you use, or detect it in the backend 
+          // and send it if you support multiple extensions
+          img.src = `data:image/jpg;base64,${file}`;
+          img.setAttribute("width", "100");
+          img.setAttribute("height", "100");
+          document.getElementsByClassName('SendmsgNow')[0].style.display = "none";
+          var BoxMassage = document.getElementsByClassName('BoxMassage');
+          let Boxmsg = document.createElement('div');
+          Boxmsg.className = "msgBot massage";
+          var aTag = document.createElement('a');
+
+          if(file_name.split('.')[1]==="jpeg"|| file_name.split('.')[1]==="jpg"|| file_name.split('.')[1]==="png"){
+          aTag.setAttribute('href',`data:image/jpg;base64,${file}`);
+          aTag.setAttribute('download',`${file_name}`);
+          aTag.appendChild(img)
+          let cc = document.createElement('div');
+          cc.innerHTML=`<b> ${file_name} <div>File size ${stfile} </div> </b>`
+          aTag.appendChild(cc)
+          Boxmsg.appendChild(aTag)
+          BoxMassage[0].appendChild(Boxmsg);
+            }else{
+          aTag.setAttribute('href',`data:image/jpg;base64,${file}`);
+          aTag.setAttribute('download',`${file_name}`);
+          let cc = document.createElement('div');
+          cc.innerHTML=`<b> ${file_name} <div>File size ${stfile} </div> </b>`
+          aTag.appendChild(cc)
+          Boxmsg.appendChild(aTag)
+          BoxMassage[0].appendChild(Boxmsg);
+
+            }
+       }, 3000)
+        
+        
+          console.log("----------------",   id, size, stfile)
 
       })
 
